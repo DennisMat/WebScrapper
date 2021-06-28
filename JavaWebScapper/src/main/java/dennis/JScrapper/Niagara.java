@@ -1,7 +1,13 @@
 package dennis.JScrapper;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,7 +20,11 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 public class Niagara {
-
+	
+	static int maxRecordCount=1;
+	
+	
+	static int recordCount=0;
 	public static void main(String[] args) throws Exception {
 		String min = "150000";
 		String max = "550000";
@@ -34,22 +44,23 @@ public class Niagara {
 		}
 
 		for (int i = 0; i < streets.size(); i++) {
-			// parseCondoPage(urls.get(i));
+			
 			lookUpStreet(streets.get(i), res.cookies());
+			recordCount++;
+			System.out.println("Record Count = " + recordCount);
+			
+			if(recordCount>maxRecordCount) {
+				break;
+			}
 		}
+		
+		System.out.println("Complete");
 
 	}
 
 	static void lookUpStreet(String searchString, Map<String, String> cookies) {
 		try {
 
-//    		searchString=searchString.replace(" ", "+");
-//    		  Response res = Jsoup.connect("https://niagarafalls.oarsystem.com/assessment/pcllist.asp?swis=291100")
-//					 .data("debug", "bdebug")
-//			         .data("streetlookup", "yes")
-//			         .data("address2", searchString).cookies(cookies).method(Method.POST).execute();
-//			
-//    		Document docListings = res.parse();
 
 			String urlStreetLookup = "https://niagarafalls.oarsystem.com/assessment/pcllist.asp?swis=291100&sbl=&address1=&address2="
 					+ searchString + "&owner_name=&page=2";
@@ -79,7 +90,9 @@ public class Niagara {
 
 				Elements tbodyTags = docProp.getElementsByTag("tbody");
 
-				getValue(tbodyTags);
+				extractValues(tbodyTags);
+				
+			
 
 			}
 
@@ -90,29 +103,49 @@ public class Niagara {
 
 	}
 
-	static void getValue(Elements tbodyTags) {
+	static   void extractValues(Elements tbodyTags) {
 		Map<String, String> data = new HashMap<String, String>();
 
+		StringBuffer sbHeader=new StringBuffer();
+		StringBuffer sbValues=new StringBuffer();
+		
 		for (int i = 0; i < tbodyTags.size(); i++) {
 			Elements trTags = tbodyTags.get(i).getElementsByTag("tr");
 			for (int j = 0; j < trTags.size(); j++) {
 				Elements tdTags = trTags.get(j).getElementsByTag("td");
 				if (tdTags.size() == 2) {
-					for (int k = 0; k < tdTags.size(); k++) {
-
-					}
-					data.put(tdTags.get(0).html(), tdTags.get(1).html());
+					//for (int k = 0; k < tdTags.size(); k++) {}
+					sbHeader.append(tdTags.get(0).html());
+					sbValues.append(tdTags.get(1).html());
+					
+					//data.put(tdTags.get(0).html(), tdTags.get(1).html());
 					// System.out.println(docProp.html());
-
 				}
-
 			}
-
 		}
-
-		int a = 3;
+		writeToFile(sbHeader.toString());
+		writeToFile(sbValues.toString());
+		
+	}
+	
+	
+	static void writeToFile(String data) {
+		try {
+			Path filePath = Paths.get("C:\\dennis\\work\\WebScrapper\\JavaWebScapper\\data.txt");
+			if(!filePath.toFile().exists()) {
+				filePath.toFile().createNewFile();
+			}
+			List<String> lines = Arrays.asList(data);
+			Files.write(filePath, lines, StandardCharsets.UTF_8, StandardOpenOption.APPEND);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 	}
 
+	
+	
 	static int getInt(String raw) {
 		int parsedOutput = 0;
 		try {
