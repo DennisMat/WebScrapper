@@ -17,21 +17,25 @@ import org.jsoup.Connection.Response;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
 import org.jsoup.select.Elements;
 
 public class Niagara {
-	
-	static int maxRecordCount=1;
-	
-	
-	static int recordCount=0;
+
+	static int skipStreetCount = 0;
+	static int maxStreetRecordCount = 200;
+	static boolean addedHeader = false;
+
+	static int recordStreetCount = 0;
+	static int recordCount = 0;
+
 	public static void main(String[] args) throws Exception {
 		String min = "150000";
 		String max = "550000";
 		String mainURL = "https://niagarafalls.oarsystem.com/assessment/main.asp?swis=291100&dbg=&opt=&swis=&sbl=&parcel9=&debug=";
 		// Document doc = Jsoup.connect(mainURL).get();
 
-		Response res = Jsoup.connect(mainURL).method(Method.GET).execute();
+		Response res = Jsoup.connect(mainURL).timeout(0).method(Method.GET).execute();
 
 		Document doc = res.parse();
 
@@ -43,29 +47,28 @@ public class Niagara {
 			streets.add(el.get(i).attr("value"));
 		}
 
-		for (int i = 0; i < streets.size(); i++) {
-			
+		for (int i = skipStreetCount; i < streets.size(); i++) {
+
 			lookUpStreet(streets.get(i), res.cookies());
-			recordCount++;
-			System.out.println("Record Count = " + recordCount);
-			
-			if(recordCount>maxRecordCount) {
-				break;
+			recordStreetCount++;
+			System.out.println("Street Count = " + i);
+
+			if (recordStreetCount > maxStreetRecordCount) {
+				// break;
 			}
 		}
-		
-		System.out.println("Complete");
+
+		System.out.println("Complete. recordCount=" + recordCount);
 
 	}
 
 	static void lookUpStreet(String searchString, Map<String, String> cookies) {
 		try {
 
-
 			String urlStreetLookup = "https://niagarafalls.oarsystem.com/assessment/pcllist.asp?swis=291100&sbl=&address1=&address2="
 					+ searchString + "&owner_name=&page=2";
 
-			Response res = Jsoup.connect(urlStreetLookup).method(Method.GET).execute();
+			Response res = Jsoup.connect(urlStreetLookup).timeout(0).method(Method.GET).execute();
 
 			Document docListings = res.parse();
 
@@ -85,14 +88,10 @@ public class Niagara {
 			for (int i = 0; i < onClickattValues.size(); i++) {
 				String propUrl = (propertyBaseUrl
 						+ onClickattValues.get(i).substring(onClickattValues.get(i).indexOf("?"))).trim();
-				Document docProp = Jsoup.connect(propUrl).method(Method.GET).execute().parse();
+				Document docProp = Jsoup.connect(propUrl).timeout(0).method(Method.GET).execute().parse();
 				// System.out.println(docProp.html());
 
-				Elements tbodyTags = docProp.getElementsByTag("tbody");
-
-				extractValues(tbodyTags);
-				
-			
+				extractValues(docProp);
 
 			}
 
@@ -103,36 +102,80 @@ public class Niagara {
 
 	}
 
-	static   void extractValues(Elements tbodyTags) {
+	static void extractValues(Document docProp) {
+		StringBuffer sbHeader = new StringBuffer();
+		StringBuffer sbValues = new StringBuffer();
+
+		String address = docProp.getElementsByClass("auto-style1").get(0).html();
+
+		address = address.substring(9, address.indexOf("br") - 1);
+
+		Elements headings = docProp.getElementsByClass("headings");
+
+		if (!addedHeader) {
+			sbHeader.append("address\t");
+		}
+		sbValues.append(address + "\t");
+
+		for (int i = 0; i < headings.size(); i++) {
+			if (headings.get(i).text().equals("Owner Information")) {
+
+				Element e = (Element) headings.get(i).parentNode().parentNode();
+
+				Elements headers = e.getElementsByTag("tr").get(1).getElementsByTag("td");
+				Elements values = e.getElementsByTag("tr").get(2).getElementsByTag("td");
+
+				if (!addedHeader) {
+					for (int k = 0; k < headers.size(); k++) {
+						sbHeader.append(headers.get(k).text() + "\t");
+					}
+				}
+
+				for (int k = 0; k < values.size(); k++) {
+					sbValues.append(values.get(k).text() + "\t");
+				}
+
+			}
+		}
+
+		Elements tbodyTags = docProp.getElementsByTag("tbody");
+
 		Map<String, String> data = new HashMap<String, String>();
 
-		StringBuffer sbHeader=new StringBuffer();
-		StringBuffer sbValues=new StringBuffer();
-		
 		for (int i = 0; i < tbodyTags.size(); i++) {
 			Elements trTags = tbodyTags.get(i).getElementsByTag("tr");
 			for (int j = 0; j < trTags.size(); j++) {
 				Elements tdTags = trTags.get(j).getElementsByTag("td");
 				if (tdTags.size() == 2) {
-					//for (int k = 0; k < tdTags.size(); k++) {}
-					sbHeader.append(tdTags.get(0).html());
-					sbValues.append(tdTags.get(1).html());
-					
-					//data.put(tdTags.get(0).html(), tdTags.get(1).html());
+					// for (int k = 0; k < tdTags.size(); k++) {}
+
+					if (tdTags.get(1).getElementsByTag("input").size() == 0) {
+						if (!addedHeader) {
+							sbHeader.append(tdTags.get(0).html() + "\t");
+
+						}
+
+						sbValues.append(tdTags.get(1).html() + "\t");
+					}
+
+					// data.put(tdTags.get(0).html(), tdTags.get(1).html());
 					// System.out.println(docProp.html());
 				}
 			}
 		}
-		writeToFile(sbHeader.toString());
+		if (!addedHeader) {
+			writeToFile(sbHeader.toString());
+			addedHeader = true;
+		}
 		writeToFile(sbValues.toString());
-		
+
+		recordCount++;
 	}
-	
-	
+
 	static void writeToFile(String data) {
 		try {
 			Path filePath = Paths.get("C:\\dennis\\work\\WebScrapper\\JavaWebScapper\\data.txt");
-			if(!filePath.toFile().exists()) {
+			if (!filePath.toFile().exists()) {
 				filePath.toFile().createNewFile();
 			}
 			List<String> lines = Arrays.asList(data);
@@ -141,11 +184,9 @@ public class Niagara {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+
 	}
 
-	
-	
 	static int getInt(String raw) {
 		int parsedOutput = 0;
 		try {
