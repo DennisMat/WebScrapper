@@ -71,12 +71,13 @@ public class Niagara {
 	}
 
 	static void lookUpStreet(String searchString, Map<String, String> cookies) {
-		try {
 
-			int page = 1;
-			int recordCountOnEachPage = 0;
+		int page = 1;
+		int recordCountOnEachPage = 0;
 
-			while (recordCountOnEachPage < 99) {
+		while (recordCountOnEachPage > 99) {
+
+			try {
 				System.out.println("about to fetch for page " + page);
 				String urlStreetPage = java.text.MessageFormat.format(urlStreetLookup, searchString, page);
 				page++;
@@ -105,12 +106,13 @@ public class Niagara {
 					extractValues(docProp);
 
 				}
+
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		} // end of while
 
 	}
 
