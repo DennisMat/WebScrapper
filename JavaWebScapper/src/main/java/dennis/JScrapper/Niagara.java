@@ -28,11 +28,19 @@ public class Niagara {
 
 	static int recordStreetCount = 0;
 	static int recordCount = 0;
+	static String min = "150000";
+	static String max = "550000";
+	static final String dataFile = "C:\\dennis\\work\\WebScrapper\\JavaWebScapper\\data.txt";
+	static final String mainURL = "https://niagarafalls.oarsystem.com/assessment/main.asp?swis=291100&dbg=&opt=&swis=&sbl=&parcel9=&debug=";
+	static final String propertyBaseUrl = "https://niagarafalls.oarsystem.com/assessment/r1parc.asp";
+
+//	String urlStreetLookup = "https://niagarafalls.oarsystem.com/assessment/pcllist.asp?swis=291100&sbl=&address1=&address2="
+//			+ searchString + "&owner_name=&page=2";
+
+	static final String urlStreetLookup = "https://niagarafalls.oarsystem.com/assessment/pcllist.asp?swis=291100&sbl=&address1=&address2={0}&owner_name=&page={1}";
 
 	public static void main(String[] args) throws Exception {
-		String min = "150000";
-		String max = "550000";
-		String mainURL = "https://niagarafalls.oarsystem.com/assessment/main.asp?swis=291100&dbg=&opt=&swis=&sbl=&parcel9=&debug=";
+
 		// Document doc = Jsoup.connect(mainURL).get();
 
 		Response res = Jsoup.connect(mainURL).timeout(0).method(Method.GET).execute();
@@ -51,7 +59,7 @@ public class Niagara {
 
 			lookUpStreet(streets.get(i), res.cookies());
 			recordStreetCount++;
-			System.out.println("Street Count = " + i);
+			System.out.println("Street Count = " + i + " of " + streets.size());
 
 			if (recordStreetCount > maxStreetRecordCount) {
 				// break;
@@ -65,34 +73,38 @@ public class Niagara {
 	static void lookUpStreet(String searchString, Map<String, String> cookies) {
 		try {
 
-			String urlStreetLookup = "https://niagarafalls.oarsystem.com/assessment/pcllist.asp?swis=291100&sbl=&address1=&address2="
-					+ searchString + "&owner_name=&page=2";
+			int page = 1;
+			int recordCountOnEachPage = 0;
 
-			Response res = Jsoup.connect(urlStreetLookup).timeout(0).method(Method.GET).execute();
+			while (recordCountOnEachPage < 99) {
+				System.out.println("about to fetch for page " + page);
+				String urlStreetPage = java.text.MessageFormat.format(urlStreetLookup, searchString, page);
+				page++;
 
-			Document docListings = res.parse();
+				Response res = Jsoup.connect(urlStreetPage).timeout(0).method(Method.GET).execute();
 
-			// System.out.println(docListings.html());
+				Document docListings = res.parse();
 
-			Elements el = docListings.getElementsByClass("link");
+				// System.out.println(docListings.html());
 
-			List<String> onClickattValues = new ArrayList<String>();
+				Elements el = docListings.getElementsByClass("link");
+				recordCountOnEachPage = el.size();
 
-			for (int i = 0; i < el.size(); i++) {
-				onClickattValues.add(el.get(i).attr("onclick").replace("\"", "").trim());
+				List<String> onClickattValues = new ArrayList<String>();
 
-			}
+				for (int i = 0; i < el.size(); i++) {
+					onClickattValues.add(el.get(i).attr("onclick").replace("\"", "").trim());
+				}
 
-			String propertyBaseUrl = "https://niagarafalls.oarsystem.com/assessment/r1parc.asp";
+				for (int i = 0; i < onClickattValues.size(); i++) {
+					String propUrl = (propertyBaseUrl
+							+ onClickattValues.get(i).substring(onClickattValues.get(i).indexOf("?"))).trim();
+					Document docProp = Jsoup.connect(propUrl).timeout(0).method(Method.GET).execute().parse();
+					// System.out.println(docProp.html());
 
-			for (int i = 0; i < onClickattValues.size(); i++) {
-				String propUrl = (propertyBaseUrl
-						+ onClickattValues.get(i).substring(onClickattValues.get(i).indexOf("?"))).trim();
-				Document docProp = Jsoup.connect(propUrl).timeout(0).method(Method.GET).execute().parse();
-				// System.out.println(docProp.html());
+					extractValues(docProp);
 
-				extractValues(docProp);
-
+				}
 			}
 
 		} catch (IOException e) {
@@ -152,7 +164,6 @@ public class Niagara {
 					if (tdTags.get(1).getElementsByTag("input").size() == 0) {
 						if (!addedHeader) {
 							sbHeader.append(tdTags.get(0).html() + "\t");
-
 						}
 
 						sbValues.append(tdTags.get(1).html() + "\t");
@@ -168,13 +179,13 @@ public class Niagara {
 			addedHeader = true;
 		}
 		writeToFile(sbValues.toString());
-
+		System.out.println("RecordCount = " + recordCount);
 		recordCount++;
 	}
 
 	static void writeToFile(String data) {
 		try {
-			Path filePath = Paths.get("C:\\dennis\\work\\WebScrapper\\JavaWebScapper\\data.txt");
+			Path filePath = Paths.get(dataFile);
 			if (!filePath.toFile().exists()) {
 				filePath.toFile().createNewFile();
 			}
