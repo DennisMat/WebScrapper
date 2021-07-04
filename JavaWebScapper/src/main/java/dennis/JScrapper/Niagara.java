@@ -1,6 +1,5 @@
 package dennis.JScrapper;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -17,7 +16,7 @@ import org.jsoup.Connection.Response;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.nodes.Node;
+
 import org.jsoup.select.Elements;
 
 public class Niagara {
@@ -30,7 +29,8 @@ public class Niagara {
 	static int recordCount = 0;
 	static String min = "150000";
 	static String max = "550000";
-	static final String dataFile = "C:\\dennis\\work\\WebScrapper\\JavaWebScapper\\data.txt";
+	
+	static  String dataFile = "data.txt";
 	static final String mainURL = "https://niagarafalls.oarsystem.com/assessment/main.asp?swis=291100&dbg=&opt=&swis=&sbl=&parcel9=&debug=";
 	static final String propertyBaseUrl = "https://niagarafalls.oarsystem.com/assessment/r1parc.asp";
 
@@ -42,6 +42,9 @@ public class Niagara {
 	public static void main(String[] args) throws Exception {
 
 		// Document doc = Jsoup.connect(mainURL).get();
+		dataFile=System.getProperty("user.dir").replace("\"", "\\")+"\\"+dataFile;
+		System.out.println("dataFile=" + dataFile);
+		
 
 		Response res = Jsoup.connect(mainURL).timeout(0).method(Method.GET).execute();
 
@@ -73,7 +76,7 @@ public class Niagara {
 	static void lookUpStreet(String searchString, Map<String, String> cookies) {
 
 		int page = 1;
-		int recordCountOnEachPage = 0;
+		int recordCountOnEachPage = 100;
 
 		while (recordCountOnEachPage > 99) {
 
@@ -86,9 +89,9 @@ public class Niagara {
 
 				Document docListings = res.parse();
 
-				// System.out.println(docListings.html());
+				//System.out.println(docListings.html());
 
-				Elements el = docListings.getElementsByClass("link");
+				Elements el = docListings.getElementsByAttributeValueContaining("id","lnk");
 				recordCountOnEachPage = el.size();
 
 				List<String> onClickattValues = new ArrayList<String>();
@@ -107,8 +110,8 @@ public class Niagara {
 
 				}
 
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
+			} catch (Exception e) {
+				recordCountOnEachPage=0;// to prevent looping infinitely.
 				e.printStackTrace();
 			}
 
