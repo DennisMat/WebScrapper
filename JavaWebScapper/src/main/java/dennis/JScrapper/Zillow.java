@@ -4,6 +4,8 @@ import org.jsoup.Jsoup;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -29,10 +31,12 @@ public class Zillow {
 			Niagara.initValues();
 			
 	
-			static StringBuffer sb = new StringBuffer();
+			StringBuffer sb = new StringBuffer();
 			for (int j = 0; j < Niagara.selectHeaders.length; j++) {
 				sb.append(Niagara.selectHeadersTitle[j]+"\t");
 			}
+			sb.append("\n");
+			
 			
 			zillowFile = System.getProperty("user.dir").replace("\"", "\\") + "\\" + zillowFile;
 
@@ -47,8 +51,15 @@ public class Zillow {
 					String fullAddress = listing.getElementsByClass("list-card-addr").get(0).text();
 					Niagara.details.put("address", fullAddress);
 					String listedPrice = listing.getElementsByClass("list-card-price").get(0).text();				
-					Niagara.details.put("listedPrice", listedPrice);	
-					Niagara.details.put("googleMap", googleMapsBaseURL + fullAddress);
+					Niagara.details.put("listedPrice", listedPrice);
+					
+					String label = listing.getElementsByClass("list-card-label").get(0).text();				
+					String status = listing.getElementsByClass("list-card-statusText").get(0).text();				
+					Niagara.details.put("status", label + " " + status);
+					
+					
+					
+					Niagara.details.put("googleMap", googleMapsBaseURL + URLEncoder.encode(fullAddress, StandardCharsets.UTF_8.toString()));
 					String zillowLink = listing.getElementsByTag("a").get(0).attr("href");
 					Niagara.details.put("zillowLink", zillowLink);
 					String address = fullAddress.split(",")[0];
@@ -60,6 +71,7 @@ public class Zillow {
 					}
 					
 					Niagara.writeToFile(sb.toString());
+					sb = new StringBuffer();
 				}
 			}
 

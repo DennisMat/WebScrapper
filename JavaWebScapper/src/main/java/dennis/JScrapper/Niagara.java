@@ -8,10 +8,8 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.jsoup.Connection.Method;
 import org.jsoup.Connection.Response;
@@ -49,12 +47,12 @@ public class Niagara {
 			"Deed Book", "Deed Page", "Deed Date" };
 	
 	static final String[] selectHeaders = 
-		{"address", "listedPrice", "Full Market Value", "Use", "Sale Date", "Sale Price", "Bedrooms", 
+		{"address", "listedPrice", "status", "Full Market Value",  "Sale Date", "Sale Price", "Use", "Bedrooms", 
 			"Baths", "Kitchens","googleMap","zillowLink",
 			"Total SQFT *", "Arms Length",	"Owner Name", 
 			"Heat Type", "Fuel Type" };
 	static final String[] selectHeadersTitle = 
-		{ "Address", "Listed Price","Tax Assesment", "Family", "Last Sale Date", "Last Sale Price", "Bedrooms", 
+		{ "Address", "Listed Price", "Status","Tax Assesment", "Last Sale Date", "Last Sale Price", "Family", "Bedrooms", 
 			"Baths", "Kitchens", "Google Map","Zillow Link",
 			"Total SQFT *", "Arms Length",	"Owner Name", 
 			"Heat Type", "Fuel Type" };
@@ -111,7 +109,7 @@ public class Niagara {
 	}
 
 	static void initValues() {
-		details = new HashMap();
+		details = new HashMap<String, String>();
 		for (String h : selectHeaders) {
 			details.put(h,"");
 		}
@@ -170,12 +168,12 @@ public class Niagara {
 
 	}
 
-	static Map extractValues(Document docProp) {
+	static Map<String,String> extractValues(Document docProp) {
 		return extractValues(docProp,null);
 		
 	}
-	static Map<String,String> extractValues(Document docProp, Map<String,String> selectedValues) {
-		if(selectedValues==null) {
+	static Map<String,String> extractValues(Document docProp, Map<String,String> details) {
+		if(details==null) {
 			initValues();
 		}
 
@@ -185,44 +183,36 @@ public class Niagara {
 
 		Elements headings = docProp.getElementsByClass("headings");
 
-		if (selectedValues.containsKey(address)) {
-			selectedValues.put("address",address);
+		if (details.containsKey(address)) {
+			details.put("address",address);
 		}
 
 		for (int i = 0; i < headings.size(); i++) {
 			if (headings.get(i).text().equals("Owner Information")) {
-
 				Element e = (Element) headings.get(i).parentNode().parentNode();
-
 				Elements headers = e.getElementsByTag("tr").get(1).getElementsByTag("td");
 				Elements values = e.getElementsByTag("tr").get(2).getElementsByTag("td");
 
-
 				for (int k = 0; k < values.size(); k++) {
-					if (selectedValues.containsKey(headers.get(k).text())) {
-						selectedValues.put(headers.get(k).text(),values.get(k).text());
+					if (details.containsKey(headers.get(k).text())) {
+						details.put(headers.get(k).text(),values.get(k).text());
 					}
 				}
-
 			}
 		}
 
 		Elements tbodyTags = docProp.getElementsByTag("tbody");
-
-		Map<String, String> data = new HashMap<String, String>();
 
 		for (int i = 0; i < tbodyTags.size(); i++) {
 			Elements trTags = tbodyTags.get(i).getElementsByTag("tr");
 			for (int j = 0; j < trTags.size(); j++) {
 				Elements tdTags = trTags.get(j).getElementsByTag("td");
 				if (tdTags.size() == 2) {
-					// for (int k = 0; k < tdTags.size(); k++) {}
-
 					if (tdTags.get(1).getElementsByTag("input").size() == 0) {
 						Element header = tdTags.get(0);
 						if (header.getElementsByTag("table").size() == 0) {
-							if (selectedValues.containsKey(header.text())) {
-								selectedValues.put(header.text(),tdTags.get(1).html());
+							if (details.containsKey(header.text())) {
+								details.put(header.text(),tdTags.get(1).html());
 							}
 						}
 					}
@@ -231,7 +221,7 @@ public class Niagara {
 		}
 		System.out.println("RecordCount = " + recordCount);
 		recordCount++;
-		return selectedValues;
+		return details;
 	}
 
 	static void writeToFile(String data) {
