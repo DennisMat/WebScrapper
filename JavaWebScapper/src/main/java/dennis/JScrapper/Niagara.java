@@ -8,8 +8,10 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.jsoup.Connection.Method;
 import org.jsoup.Connection.Response;
@@ -21,7 +23,44 @@ import org.jsoup.select.Elements;
 
 public class Niagara {
 
-	static final String[] allHeaders= {"address","Owner Name","Address 1","Address 2","Unit Name","Unit Number","City/State/Zip","Maps","Total","Total Land","County Taxable (Niagara)","Town Taxable","School Taxable","Village Taxable","Equalization Rate","Full Market Value","Maps","Total","Total Land","County Taxable (Niagara)","Town Taxable","School Taxable","Village Taxable","Equalization Rate","Full Market Value","Maps","Total","Total Land","County Taxable (Niagara)","Town Taxable","School Taxable","Village Taxable","Equalization Rate","Full Market Value","Year Built","House Style","Total SQFT *","1st Story SQFT *","2nd Story SQFT *","1/2 Story SQFT *","3/4 Story SQFT *","Add'l Story SQFT *","Finished Attic SQFT *","Finished Basement SQFT *","Finished Rec Room SQFT *","Finished Over Garage SQFT *","Number of Stories","Overall Condition","Exterior Wall Material","Bedrooms","Baths","Kitchens","Basement Type","Central Air","Heat Type","Fuel Type","Fireplaces","Garage(s)","Garage(s) SQFT","Type","Use","Ownership Code","Zoning","Road Type","Water Supply","Utilities","School District","Neighborhood Code","Sale Date","Sale Price","Useable Sale","Arms Length","Prior Owner Name","Deed Book","Deed Page","Deed Date","Year Built","House Style","Total SQFT *","1st Story SQFT *","2nd Story SQFT *","1/2 Story SQFT *","3/4 Story SQFT *","Add'l Story SQFT *","Finished Attic SQFT *","Finished Basement SQFT *","Finished Rec Room SQFT *","Finished Over Garage SQFT *","Number of Stories","Overall Condition","Exterior Wall Material","Bedrooms","Baths","Kitchens","Basement Type","Central Air","Heat Type","Fuel Type","Fireplaces","Garage(s)","Garage(s) SQFT","Type","Use","Ownership Code","Zoning","Road Type","Water Supply","Utilities","School District","Neighborhood Code","Sale Date","Sale Price","Useable Sale","Arms Length","Prior Owner Name","Deed Book","Deed Page","Deed Date","Type","Use","Ownership Code","Zoning","Road Type","Water Supply","Utilities","School District","Neighborhood Code","Sale Date","Sale Price","Useable Sale","Arms Length","Prior Owner Name","Deed Book","Deed Page","Deed Date"};
+	/* IMPORTANT: contains duplicates */
+	static final String[] allHeaders = { "address", "Owner Name", "Address 1", "Address 2", "Unit Name", "Unit Number",
+			"City/State/Zip", "Maps", "Total", "Total Land", "County Taxable (Niagara)", "Town Taxable",
+			"School Taxable", "Village Taxable", "Equalization Rate", "Full Market Value", "Maps", "Total",
+			"Total Land", "County Taxable (Niagara)", "Town Taxable", "School Taxable", "Village Taxable",
+			"Equalization Rate", "Full Market Value", "Maps", "Total", "Total Land", "County Taxable (Niagara)",
+			"Town Taxable", "School Taxable", "Village Taxable", "Equalization Rate", "Full Market Value", "Year Built",
+			"House Style", "Total SQFT *", "1st Story SQFT *", "2nd Story SQFT *", "1/2 Story SQFT *",
+			"3/4 Story SQFT *", "Add'l Story SQFT *", "Finished Attic SQFT *", "Finished Basement SQFT *",
+			"Finished Rec Room SQFT *", "Finished Over Garage SQFT *", "Number of Stories", "Overall Condition",
+			"Exterior Wall Material", "Bedrooms", "Baths", "Kitchens", "Basement Type", "Central Air", "Heat Type",
+			"Fuel Type", "Fireplaces", "Garage(s)", "Garage(s) SQFT", "Type", "Use", "Ownership Code", "Zoning",
+			"Road Type", "Water Supply", "Utilities", "School District", "Neighborhood Code", "Sale Date", "Sale Price",
+			"Useable Sale", "Arms Length", "Prior Owner Name", "Deed Book", "Deed Page", "Deed Date", "Year Built",
+			"House Style", "Total SQFT *", "1st Story SQFT *", "2nd Story SQFT *", "1/2 Story SQFT *",
+			"3/4 Story SQFT *", "Add'l Story SQFT *", "Finished Attic SQFT *", "Finished Basement SQFT *",
+			"Finished Rec Room SQFT *", "Finished Over Garage SQFT *", "Number of Stories", "Overall Condition",
+			"Exterior Wall Material", "Bedrooms", "Baths", "Kitchens", "Basement Type", "Central Air", "Heat Type",
+			"Fuel Type", "Fireplaces", "Garage(s)", "Garage(s) SQFT", "Type", "Use", "Ownership Code", "Zoning",
+			"Road Type", "Water Supply", "Utilities", "School District", "Neighborhood Code", "Sale Date", "Sale Price",
+			"Useable Sale", "Arms Length", "Prior Owner Name", "Deed Book", "Deed Page", "Deed Date", "Type", "Use",
+			"Ownership Code", "Zoning", "Road Type", "Water Supply", "Utilities", "School District",
+			"Neighborhood Code", "Sale Date", "Sale Price", "Useable Sale", "Arms Length", "Prior Owner Name",
+			"Deed Book", "Deed Page", "Deed Date" };
+	
+	static final String[] selectHeaders = 
+		{"address", "listedPrice", "Full Market Value", "Use", "Sale Date", "Sale Price", "Bedrooms", 
+			"Baths", "Kitchens","googleMap","zillowLink",
+			"Total SQFT *", "Arms Length",	"Owner Name", 
+			"Heat Type", "Fuel Type" };
+	static final String[] selectHeadersTitle = 
+		{ "Address", "Listed Price","Tax Assesment", "Family", "Last Sale Date", "Last Sale Price", "Bedrooms", 
+			"Baths", "Kitchens", "Google Map","Zillow Link",
+			"Total SQFT *", "Arms Length",	"Owner Name", 
+			"Heat Type", "Fuel Type" };
+
+	static Map<String,String> details;
+
 	static int skipStreetCount = 0;
 	static int maxStreetRecordCount = 200;
 	static boolean addedHeader = false;
@@ -30,8 +69,8 @@ public class Niagara {
 	static int recordCount = 0;
 	static String min = "150000";
 	static String max = "550000";
-	
-	static  String dataFile = "data.txt";
+
+	static String dataFile = "data.txt";
 	static final String mainURL = "https://niagarafalls.oarsystem.com/assessment/main.asp?swis=291100&dbg=&opt=&swis=&sbl=&parcel9=&debug=";
 	static final String propertyBaseUrl = "https://niagarafalls.oarsystem.com/assessment/r1parc.asp";
 
@@ -42,10 +81,7 @@ public class Niagara {
 
 	public static void main(String[] args) throws Exception {
 
-		// Document doc = Jsoup.connect(mainURL).get();
-		dataFile=System.getProperty("user.dir").replace("\"", "\\")+"\\"+dataFile;
-		System.out.println("dataFile=" + dataFile);
-		
+		initValues();
 
 		Response res = Jsoup.connect(mainURL).timeout(0).method(Method.GET).execute();
 
@@ -61,7 +97,7 @@ public class Niagara {
 
 		for (int i = skipStreetCount; i < streets.size(); i++) {
 
-			lookUpStreet(streets.get(i), res.cookies());
+			lookUpStreet(streets.get(i));
 			recordStreetCount++;
 			System.out.println("Street Count = " + i + " of " + streets.size());
 
@@ -74,7 +110,18 @@ public class Niagara {
 
 	}
 
-	static void lookUpStreet(String searchString, Map<String, String> cookies) {
+	static void initValues() {
+		details = new HashMap();
+		for (String h : selectHeaders) {
+			details.put(h,"");
+		}
+
+		// Document doc = Jsoup.connect(mainURL).get();
+		dataFile = System.getProperty("user.dir").replace("\"", "\\") + "\\" + dataFile;
+		System.out.println("dataFile=" + dataFile);
+	}
+
+	static void lookUpStreet(String searchString) {
 
 		int page = 1;
 		int recordCountOnEachPage = 100;
@@ -90,32 +137,32 @@ public class Niagara {
 
 				Document docListings = res.parse();
 
-				//System.out.println(docListings.html());
+				// System.out.println(docListings.html());
 
-				Elements el = docListings.getElementsByAttributeValueContaining("id","lnk");
+				Elements el = docListings.getElementsByAttributeValueContaining("id", "lnk");
 				recordCountOnEachPage = el.size();
 
 				List<String> properties = new ArrayList<String>();
 
 				for (int i = 0; i < el.size(); i++) {
-					if(el.get(i).html().contains("1007")) {
-						properties.add(el.get(i).attr("onclick").replace("\"", "").trim());
-					}
-					
+					// if(el.get(i).html().contains("1007")) {
+					properties.add(el.get(i).attr("onclick").replace("\"", "").trim());
+					// }
+
 				}
 
 				for (int i = 0; i < properties.size(); i++) {
-					String propUrl = (propertyBaseUrl
-							+ properties.get(i).substring(properties.get(i).indexOf("?"))).trim();
+					String propUrl = (propertyBaseUrl + properties.get(i).substring(properties.get(i).indexOf("?")))
+							.trim();
 					Document docProp = Jsoup.connect(propUrl).timeout(0).method(Method.GET).execute().parse();
 					// System.out.println(docProp.html());
 
-					extractValues(docProp);
+					extractValues(docProp, details);
 
 				}
 
 			} catch (Exception e) {
-				recordCountOnEachPage=0;// to prevent looping infinitely.
+				recordCountOnEachPage = 0;// to prevent looping infinitely.
 				e.printStackTrace();
 			}
 
@@ -123,9 +170,14 @@ public class Niagara {
 
 	}
 
-	static void extractValues(Document docProp) {
-		StringBuffer sbHeader = new StringBuffer();
-		StringBuffer sbValues = new StringBuffer();
+	static Map extractValues(Document docProp) {
+		return extractValues(docProp,null);
+		
+	}
+	static Map<String,String> extractValues(Document docProp, Map<String,String> selectedValues) {
+		if(selectedValues==null) {
+			initValues();
+		}
 
 		String address = docProp.getElementsByClass("auto-style1").get(0).html();
 
@@ -133,10 +185,9 @@ public class Niagara {
 
 		Elements headings = docProp.getElementsByClass("headings");
 
-		if (!addedHeader) {
-			sbHeader.append("address\t");
+		if (selectedValues.containsKey(address)) {
+			selectedValues.put("address",address);
 		}
-		sbValues.append(address + "\t");
 
 		for (int i = 0; i < headings.size(); i++) {
 			if (headings.get(i).text().equals("Owner Information")) {
@@ -146,14 +197,11 @@ public class Niagara {
 				Elements headers = e.getElementsByTag("tr").get(1).getElementsByTag("td");
 				Elements values = e.getElementsByTag("tr").get(2).getElementsByTag("td");
 
-				if (!addedHeader) {
-					for (int k = 0; k < headers.size(); k++) {
-						sbHeader.append(headers.get(k).text() + "\t");
-					}
-				}
 
 				for (int k = 0; k < values.size(); k++) {
-					sbValues.append(values.get(k).text() + "\t");
+					if (selectedValues.containsKey(headers.get(k).text())) {
+						selectedValues.put(headers.get(k).text(),values.get(k).text());
+					}
 				}
 
 			}
@@ -171,33 +219,19 @@ public class Niagara {
 					// for (int k = 0; k < tdTags.size(); k++) {}
 
 					if (tdTags.get(1).getElementsByTag("input").size() == 0) {
-						Element header=tdTags.get(0);
-						if(header.getElementsByTag("table").size()==0){
-						if (!addedHeader) {
-	
-								sbHeader.append( header.text()+ "\t");
-							
-							
+						Element header = tdTags.get(0);
+						if (header.getElementsByTag("table").size() == 0) {
+							if (selectedValues.containsKey(header.text())) {
+								selectedValues.put(header.text(),tdTags.get(1).html());
 							}
-						
-						sbValues.append(tdTags.get(1).html() + "\t");
-						
 						}
-
 					}
-
-					// data.put(tdTags.get(0).html(), tdTags.get(1).html());
-					// System.out.println(docProp.html());
 				}
 			}
 		}
-		if (!addedHeader) {
-			writeToFile(sbHeader.toString());
-			addedHeader = true;
-		}
-		writeToFile(sbValues.toString());
 		System.out.println("RecordCount = " + recordCount);
 		recordCount++;
+		return selectedValues;
 	}
 
 	static void writeToFile(String data) {
