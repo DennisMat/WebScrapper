@@ -47,13 +47,13 @@ public class Niagara {
 			"Deed Book", "Deed Page", "Deed Date" };
 	
 	static final String[] selectHeaders = 
-		{"address", "listedPrice", "status", "Full Market Value",  "Sale Date", "Sale Price", "Use", "Bedrooms", 
-			"Baths", "Kitchens","googleMap","zillowLink",
+		{"address", "listedPrice", "status", "Total",  "Sale Date", "Sale Price", "Use", "Bedrooms", 
+			"Baths", "Kitchens","days","googleMap","zillowLink","oarsLink",
 			"Total SQFT *", "Arms Length",	"Owner Name", 
 			"Heat Type", "Fuel Type" };
 	static final String[] selectHeadersTitle = 
 		{ "Address", "Listed Price", "Status","Tax Assesment", "Last Sale Date", "Last Sale Price", "Family", "Bedrooms", 
-			"Baths", "Kitchens", "Google Map","Zillow Link",
+			"Baths", "Kitchens", "Days On Market","Google Map","Zillow Link","Oars Link",
 			"Total SQFT *", "Arms Length",	"Owner Name", 
 			"Heat Type", "Fuel Type" };
 
@@ -64,7 +64,7 @@ public class Niagara {
 	static boolean addedHeader = false;
 
 	static int recordStreetCount = 0;
-	static int recordCount = 0;
+	
 	static String min = "150000";
 	static String max = "550000";
 
@@ -77,7 +77,7 @@ public class Niagara {
 
 	static final String urlStreetLookup = "https://niagarafalls.oarsystem.com/assessment/pcllist.asp?swis=291100&sbl=&address1=&address2={0}&owner_name=&page={1}";
 
-	public static void main(String[] args) throws Exception {
+	public static void main2(String[] args) throws Exception {
 
 		initValues();
 
@@ -104,7 +104,7 @@ public class Niagara {
 			}
 		}
 
-		System.out.println("Complete. recordCount=" + recordCount);
+		
 
 	}
 
@@ -219,8 +219,7 @@ public class Niagara {
 				}
 			}
 		}
-		System.out.println("RecordCount = " + recordCount);
-		recordCount++;
+		
 		return details;
 	}
 
