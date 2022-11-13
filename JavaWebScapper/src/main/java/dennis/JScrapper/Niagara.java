@@ -50,12 +50,12 @@ public class Niagara {
 		{"address", "listedPrice", "status", "Total",  "Sale Date", "Sale Price", "Use", "Bedrooms", 
 			"Baths", "Kitchens","days","googleMap","zillowLink","oarsLink",
 			"Total SQFT *", "Arms Length",	"Owner Name", 
-			"Heat Type", "Fuel Type" };
+			"Heat Type", "Fuel Type", "listedBy" };
 	static final String[] selectHeadersTitle = 
 		{ "Address", "Listed Price", "Status","Tax Assesment", "Last Sale Date", "Last Sale Price", "Family", "Bedrooms", 
 			"Baths", "Kitchens", "Days On Market","Google Map","Zillow Link","Oars Link",
 			"Total SQFT *", "Arms Length",	"Owner Name", 
-			"Heat Type", "Fuel Type" };
+			"Heat Type", "Fuel Type", "Listed By" };
 
 	static Map<String,String> details;
 
@@ -70,18 +70,18 @@ public class Niagara {
 
 	static String dataFile = "data.txt";
 	static final String mainURL = "https://niagarafalls.oarsystem.com/assessment/main.asp?swis=291100&dbg=&opt=&swis=&sbl=&parcel9=&debug=";
-	static final String propertyBaseUrl = "https://niagarafalls.oarsystem.com/assessment/r1parc.asp";
+	static final String propertyBaseOARSUrl = "https://niagarafalls.oarsystem.com/assessment/r1parc.asp";
 
 //	String urlStreetLookup = "https://niagarafalls.oarsystem.com/assessment/pcllist.asp?swis=291100&sbl=&address1=&address2="
 //			+ searchString + "&owner_name=&page=2";
 
-	static final String urlStreetLookup = "https://niagarafalls.oarsystem.com/assessment/pcllist.asp?swis=291100&sbl=&address1=&address2={0}&owner_name=&page={1}";
+	static final String streetLookupOARSUrl = "https://niagarafalls.oarsystem.com/assessment/pcllist.asp?swis=291100&sbl=&address1=&address2={0}&owner_name=&page={1}";
 
 	public static void main2(String[] args) throws Exception {
 
 		initValues();
 
-		Response res = Jsoup.connect(mainURL).timeout(0).method(Method.GET).execute();
+		Response res = Jsoup.connect(mainURL).validateTLSCertificates(false).timeout(0).method(Method.GET).execute();
 
 		Document doc = res.parse();
 
@@ -128,10 +128,10 @@ public class Niagara {
 
 			try {
 				System.out.println("about to fetch for page " + page);
-				String urlStreetPage = java.text.MessageFormat.format(urlStreetLookup, searchString, page);
+				String urlStreetPage = java.text.MessageFormat.format(streetLookupOARSUrl, searchString, page);
 				page++;
 
-				Response res = Jsoup.connect(urlStreetPage).timeout(0).method(Method.GET).execute();
+				Response res = Jsoup.connect(urlStreetPage).validateTLSCertificates(false).timeout(0).method(Method.GET).execute();
 
 				Document docListings = res.parse();
 
@@ -150,9 +150,9 @@ public class Niagara {
 				}
 
 				for (int i = 0; i < properties.size(); i++) {
-					String propUrl = (propertyBaseUrl + properties.get(i).substring(properties.get(i).indexOf("?")))
+					String propUrl = (propertyBaseOARSUrl + properties.get(i).substring(properties.get(i).indexOf("?")))
 							.trim();
-					Document docProp = Jsoup.connect(propUrl).timeout(0).method(Method.GET).execute().parse();
+					Document docProp = Jsoup.connect(propUrl).validateTLSCertificates(false).timeout(0).method(Method.GET).execute().parse();
 					// System.out.println(docProp.html());
 
 					extractValues(docProp, details);
